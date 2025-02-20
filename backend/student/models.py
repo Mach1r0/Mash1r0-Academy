@@ -1,8 +1,8 @@
 from django.db import models
-from user import User
+from user.models import User
 
 
-class Studant(models.Model): 
+class Student(models.Model): 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='studant_profile')
     bio = models.TextField(blank=True)
     age = models.IntegerField()

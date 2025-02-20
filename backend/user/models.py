@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
-from  django.utils.text import slugify
+from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.utils.text import slugify
 
-class UserManager(AbstractUser):
+class UserManager(models.Manager):
     def create_user(self, name, email, username, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -40,6 +40,8 @@ class User(AbstractUser):
     updated_at = models.DateTimeField(auto_now=True)
     is_staff = models.BooleanField(default=False)    
     role = models.CharField(max_length=255, choices=ROLE, default='student')
+    groups = models.ManyToManyField(Group, related_name='user_groups')
+    user_permissions = models.ManyToManyField(Permission, related_name='user_permissions')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'username']
