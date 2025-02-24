@@ -33,7 +33,6 @@ services:
       - ./frontend:/app
     depends_on:
       - backend
-    command: sh -c "npm start"
 
 volumes:
   postgres_data:
