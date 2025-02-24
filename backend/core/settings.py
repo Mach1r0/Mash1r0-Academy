@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'student',
     'classroom', 
     'course',
+    'content',
+    'questions', 
+    'StudentResponse',
 ]
 
 MIDDLEWARE = [
