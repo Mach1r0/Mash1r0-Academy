@@ -5,8 +5,8 @@ from user.models import User
 class Student(models.Model): 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='studant_profile')
     bio = models.TextField(blank=True)
-    age = models.IntegerField()
-    
+    matricula = models.IntegerField()
+
     def __str__(self):
         return f"Studant: {self.user.name}"
     
@@ -14,4 +14,4 @@ class Student(models.Model):
         if self.user.role != 'studant':
             self.user.role = 'studant'
             self.user.save()
-        super(Studant, self).save(*args, **kwargs)
+        super(Student, self).save(*args, **kwargs)
