@@ -1,0 +1,18 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copie package.json e package-lock.json
+COPY package*.json ./
+
+# Instale as dependências
+RUN npm install
+
+# Copie o restante dos arquivos (não é realmente necessário devido ao volume)
+COPY . .
+
+# Exponha a porta
+EXPOSE 3000
+
+# Comando para iniciar o desenvolvimento
+CMD ["npm", "run", "dev"]
