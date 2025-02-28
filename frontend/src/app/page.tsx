@@ -65,8 +65,7 @@ export default function Home() {
               <Card key={subject.name} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div
-                    className={`${subject.color} w-16 h-16 rounded-full flex items-center justify-center text-white mb-4`}
-                  >
+                    className={`${subject.color} w-16 h-16 rounded-full flex items-center justify-center text-white mb-4`}>
                     {subject.icon}
                   </div>
                   <CardTitle>{subject.name}</CardTitle>
