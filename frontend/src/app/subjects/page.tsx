@@ -32,7 +32,6 @@ const courses = [
 export default function CoursesPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
       
       <main className="flex-grow container mx-auto px-4 py-8">
         <section className="mb-12">
@@ -50,15 +49,13 @@ export default function CoursesPage() {
                   <CardDescription>{course.description}</CardDescription>
                 </CardHeader>
                 <CardFooter>
-                  <Button variant="outline" className="w-full">Estude</Button>
+                  <Button variant="outline" className="w-full">Study</Button>
                 </CardFooter>
               </Card> 
             ))}
           </div>
         </section>
       </main>
-      
-      <Footer />
     </div>
   )
 }
