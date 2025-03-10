@@ -23,7 +23,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     email =  serializers.EmailField(required=True)
     username = serializers.CharField(required=True) 
     password = serializers.CharField(required=True, validators=[validate_password])
-    
+    name = serializers.CharField(required=True)
+
     class Meta: 
         model = User 
         fields =  [ 'name', 'email', 'username', 'password']

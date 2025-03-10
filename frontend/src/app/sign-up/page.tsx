@@ -26,14 +26,12 @@ export default function SignUp() {
     const name = formData.get("name") as string
     const email = formData.get("email") as string
     const password = formData.get("password") as string
+    const username = formData.get("username") as string
 
     try {
-      // Here you would typically call your registration API
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Sign up:", { name, email, password })
-      // Implement sign up logic here
+      console.log("Sign up:", { name, email, password, username })
 
-      // Redirect to dashboard after successful registration
       router.push("/dashboard")
     } catch (err) {
       setError("Registration failed. Please try again.")
@@ -63,6 +61,10 @@ export default function SignUp() {
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input id="password" name="password" type="password" required />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="name">Username</Label>
+                <Input id="username" name="username" type="text" required />
               </div>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Signing up..." : "Sign Up"}

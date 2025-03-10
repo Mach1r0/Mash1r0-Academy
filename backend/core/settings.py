@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'questions', 
     'StudentResponse',
     'corsheaders',
+    'rest_framework.authtoken',  
 ]
 
 MIDDLEWARE = [
@@ -90,9 +91,16 @@ STATIC_URL = 'static/'
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
     'PAGE_SIZE': 10
 }
 
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', 
+    'user.authentication.EmailBackend', 
+]
 
 TEMPLATES = [
     {

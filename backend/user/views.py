@@ -8,7 +8,8 @@ from rest_framework import status
 from django.contrib.auth import authenticate, get_user_model
 import logging, datetime
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework.authtoken.models import Token
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -17,7 +18,8 @@ class UserViewSet(viewsets.ModelViewSet):
 class RegisterUser(APIView):
     serializer_class = RegisterSerializer  
     
-    def post(self, request, *args, **kwargs):  
+    def post(self, request, *args, **kwargs): 
+        print("Received data:", request.data) 
         serializer = self.serializer_class(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()  
@@ -37,7 +39,6 @@ class RegisterUser(APIView):
         except (TypeError, KeyError):
             return {}
         
-
 class LoginView(APIView):
     authentication_classes = []  
     permission_classes = [] 
@@ -51,27 +52,42 @@ class LoginView(APIView):
         
         username = serializer.validated_data['username']
         password = serializer.validated_data['password']
-
-        user = authenticate(username=username, password=password)
-
-        if user is None:
-            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        refresh = RefreshToken.for_user(user)
-        access = refresh.access_token
-
-        user_data = {
-            'id': user.id,
-            'username': user.username,
-            'name': user.name,
-            'email': user.email,
-            'slug': user.slug,
-            'picture': user.picture.url if user.picture else None  
-        }
         
-        return Response({
-            'refresh': str(refresh),
-            'access': str(access),
-            'user': user_data
-        }, status=status.HTTP_200_OK)
-
+        try:
+            user = User.objects.get(username=username)
+            
+            if user.check_password(password):
+                refresh = RefreshToken.for_user(user)
+                access = refresh.access_token
+                
+                user_data = {
+                    'id': user.id,
+                    'username': user.username,
+                    'name': getattr(user, 'name', ''),
+                    'email': user.email
+                }
+                
+                if hasattr(user, 'slug'):
+                    user_data['slug'] = user.slug
+                
+                if hasattr(user, 'picture') and user.picture:
+                    try:
+                        user_data['picture'] = user.picture.url
+                    except:
+                        user_data['picture'] = None
+                
+                return Response({
+                    'refresh': str(refresh),
+                    'access': str(access),
+                    'user': user_data
+                }, status=status.HTTP_200_OK)
+            else:
+                print(f"Password verification failed for user {username}")
+                return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        except User.DoesNotExist:
+            print(f"User {username} not found")
+            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception as e:
+            print(f"Error during login: {str(e)}")
+            return Response({'detail': 'An error occurred during login'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
