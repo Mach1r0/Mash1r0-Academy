@@ -66,7 +66,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'core.urls'
 
 
-
+AUTH_USER_MODEL = 'user.User'
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 

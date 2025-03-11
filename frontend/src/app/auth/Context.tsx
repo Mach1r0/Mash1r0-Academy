@@ -14,7 +14,7 @@ export interface User {
 interface AuthContextType {
     user: User | null;
     token: string | null;
-    login: (username: string, password: string) => Promise<{ok: boolean; error?: string}>;
+    signIn: (username: string, password: string) => Promise<{ok: boolean; error?: string}>;
     signUp: (name: string, username: string, email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
     error: string | null;
     logout: () => void;
@@ -51,7 +51,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsReady(true);
     }, []);
 
-    const login = async (username: string, password: string): Promise<{ok: boolean; error?: string}> => {
+    const signIn = async (username: string, password: string): Promise<{ok: boolean; error?: string}> => {
         const data = {username, password};
     
         try {
@@ -62,24 +62,28 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 },
                 body: JSON.stringify(data)
             });
-            if(response.ok) {
-                const result = await response.json();
-                setUser(result.user);
-                setToken(result.token);
-                localStorage.setItem('token', result.token);
-                localStorage.setItem('user', JSON.stringify(result.user));
-                Cookies.set('token', result.token, {expires: 7});
-                return { ok: true };
-            } else {
-                const result = await response.json();
-                return { ok: false, error: result.error };
+            const result = await response.json(); 
+
+            if(!response.ok) {
+                console.error("Error while logging in");
+                setError(result.detail || "Login failed")
+                return { ok: false, error: result.detail || "login failed"}
             }
-        } catch (error) {
-            return { ok: false, error: "An error occurred while logging in" };
-        }
-    }; 
+            localStorage.setItem("token", result.token); 
+            localStorage.setItem("user", JSON.stringify(result.user))
+            setToken(result.token);
+            setUser(result.user);
+            router.push("/");
+            return { ok: true }; 
+    }catch(error) {
+        console.error("loggin error", error);
+        setError("An error occured while loggin in"); 
+        return { ok: false, error: "An error occured while loggin in" }
+   }
+}; 
     
-    const signUp = async (name: string, username: string, email: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+const signUp = async (name: string, username: string, email: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+        
         const data = { name, username, email, password }; 
         
         try{
@@ -90,28 +94,28 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 },
                 body: JSON.stringify(data)
             });
+
             if(response.ok) {
                 return { ok: true }; 
             } else {
                 const result = await response.json();
                 return { ok: false, error: result.error }; 
             }
-
         }catch(error) {
             return { ok: false, error: "An error occurred while signing up" }; 
         }
     };
     
-    const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        setToken(null);
-        setUser(null); 
-        router.push('/'); 
-    }; 
+const logout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setToken(null);
+    setUser(null); 
+    router.push('/'); 
+}; 
     
     return (
-        <AuthContext.Provider value={{ user, token, login, signUp, error, logout }}>
+        <AuthContext.Provider value={{ user, token, signIn, signUp, error, logout }}>
             {children}
         </AuthContext.Provider>
     );

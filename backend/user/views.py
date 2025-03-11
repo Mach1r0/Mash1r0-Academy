@@ -46,15 +46,16 @@ class LoginView(APIView):
     def post(self, request):
         print("Received data:", request.data)  
         serializer = LoginSerializer(data=request.data)
+
         if not serializer.is_valid():
             print("Serializer errors:", serializer.errors)  
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
         password = serializer.validated_data['password']
         
         try:
-            user = User.objects.get(username=username)
+            user = User.objects.get(email=email)
             
             if user.check_password(password):
                 refresh = RefreshToken.for_user(user)
@@ -82,11 +83,11 @@ class LoginView(APIView):
                     'user': user_data
                 }, status=status.HTTP_200_OK)
             else:
-                print(f"Password verification failed for user {username}")
+                print(f"Password verification failed for user {email}")
                 return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         
         except User.DoesNotExist:
-            print(f"User {username} not found")
+            print(f"User {email} not found")
             return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         except Exception as e:
             print(f"Error during login: {str(e)}")

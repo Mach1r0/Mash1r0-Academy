@@ -1,8 +1,8 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser, Group, Permission
+from django.contrib.auth.models import AbstractUser, Group, Permission, BaseUserManager
 from django.utils.text import slugify
 
-class UserManager(models.Manager):
+class UserManager(BaseUserManager):
     def create_user(self, name, email, username, password=None, **extra_fields):
         if not email:
             raise ValueError('The Email field must be set')
@@ -25,6 +25,7 @@ class UserManager(models.Manager):
         return self.create_user(name, email, username, password, **extra_fields)
 
 class User(AbstractUser): 
+
     ROLE = (
         ('admin', 'Admin'),
         ('teacher', 'Teacher'),
@@ -42,6 +43,8 @@ class User(AbstractUser):
     role = models.CharField(max_length=255, choices=ROLE, default='student')
     groups = models.ManyToManyField(Group, related_name='user_groups')
     user_permissions = models.ManyToManyField(Permission, related_name='user_permissions')
+
+    objects = UserManager()
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name', 'username']

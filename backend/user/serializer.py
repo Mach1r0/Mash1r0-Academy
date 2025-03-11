@@ -1,7 +1,12 @@
-from rest_framework import serializers
+from rest_framework import serializers, status
 from .models import User
+from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -51,31 +56,21 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField(required=True, write_only=True)
+    email = serializers.EmailField(required=True, write_only=True)
     password = serializers.CharField(required=True, write_only=True)
-    
+
     def validate(self, data):
-        username = data.get('username')
+        email = data.get('email')
         password = data.get('password')
+
+        if not email or not password:
+            raise serializers.ValidationError("Email and password are required")
         
-        if not username or not password:
-            raise serializers.ValidationError("username and password are required")
-        
-        if not User.objects.filter(username=username).exists():
-            raise serializers.ValidationError("username is not valid")
-        
-        user = User.objects.filter(username=username).first()
-        if user and not user.check_password(password):
+        user = User.objects.filter(email=email).first()
+        if not user:
+            raise serializers.ValidationError("Email is not valid")
+
+        if not user.check_password(password):
             raise serializers.ValidationError("Password is not valid")
-        
+
         return data
-    
-    def save(self, **kwargs):
-        username = self.validated_data['username']
-        user = User.objects.get(username=username)
-        token, created = Token.objects.get_or_create(user=user)
-        return {
-            'token': token.key,
-            'user_id': user.pk,
-            'username': user.username
-        }

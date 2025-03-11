@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -11,8 +10,10 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useAuth } from "@/app/auth/Context"
 
 export default function SignIn() {
+  const { sigIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -26,19 +27,6 @@ export default function SignIn() {
     const email = formData.get("email") as string
     const password = formData.get("password") as string
 
-    try {
-      // Here you would typically call your authentication API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Sign in:", { email, password })
-      // Implement sign in logic here
-
-      // Redirect to home page after successful authentication
-      router.push("/dashboard")
-    } catch (err) {
-      setError("Authentication failed. Please try again.")
-    } finally {
-      setIsLoading(false)
-    }
   }
 
   return (

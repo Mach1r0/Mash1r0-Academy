@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -11,32 +10,43 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { AlertCircle } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { useAuth } from '@/app/auth/Context'
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+  const { signUp } = useAuth()
+  const [name, setName] = useState('')
+  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsLoading(true)
-    setError(null)
-
-    const formData = new FormData(event.currentTarget)
-    const name = formData.get("name") as string
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-    const username = formData.get("username") as string
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-      console.log("Sign up:", { name, email, password, username })
-
-      router.push("/dashboard")
-    } catch (err) {
-      setError("Registration failed. Please try again.")
-    } finally {
+    setError('')
+  
+    if (password !== confirmPassword) {
+      setError('Passwords do not match')
       setIsLoading(false)
+      return 
+    }
+
+    try { 
+      const response = await signUp(name, username, email, password)
+      setIsLoading(false)
+      if(response.ok){
+        router.push('/login')
+      } else {
+        setError(response.error || "An error occurred")
+      }
+    }
+    catch(error){
+      console.error(error)
+      setIsLoading(false)
+      setError("Failed to sign up")
     }
   }
 
@@ -44,28 +54,69 @@ export default function SignUp() {
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-[350px] shadow-lg">
         <CardHeader>
-          <CardTitle>Create a StudyQuest account</CardTitle>
-          <CardDescription>Enter your details to sign up</CardDescription>
+          <CardTitle> Create a StudyQuest account </CardTitle>
+          <CardDescription> Enter your details to sign up </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit}>
             <div className="grid gap-4">
               <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username" 
+                  name="username" 
+                  type="text" 
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required 
+                />
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" name="name" type="text" required />
+                <Input 
+                  id="name" 
+                  name="name" 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="name">Username</Label>
-                <Input id="username" name="username" type="text" required />
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input 
+                  id="confirmPassword" 
+                  name="confirmPassword" 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required 
+                />
               </div>
+          
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Signing up..." : "Sign Up"}
               </Button>
