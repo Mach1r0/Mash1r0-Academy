@@ -13,20 +13,26 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useAuth } from "@/app/auth/Context"
 
 export default function SignIn() {
-  const { sigIn } = useAuth();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const router = useRouter()
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSingIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    const formData = new FormData(event.currentTarget)
-    const email = formData.get("email") as string
-    const password = formData.get("password") as string
-
+    try {
+      const result = await signIn(email, password);
+      if (result && result.ok) {
+        router.push('/')
+      } else {
+        setError("Invalid Credentials")
+      }
+    } catch (error) {
+      console.error(error)
+      setError("An error occurred during sign-in")
+    }
   }
 
   return (
@@ -37,15 +43,30 @@ export default function SignIn() {
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSingIn}>
             <div className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                <Input 
+                  id="email" 
+                  name="email" 
+                  type="email" 
+                  placeholder="m@example.com" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required 
+                />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" required />
+                <Input 
+                  id="password" 
+                  name="password" 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required 
+                />
               </div>
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}
