@@ -22,7 +22,10 @@ export default function SignUp() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-
+  const [usernameError, setUsernameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsLoading(true)
@@ -36,17 +39,33 @@ export default function SignUp() {
 
     try { 
       const response = await signUp(name, username, email, password)
-      setIsLoading(false)
       if(response.ok){
-        router.push('/login')
+        router.push('/sign-in')
       } else {
-        setError(response.error || "An error occurred")
+        setUsernameError('');
+        setEmailError('');
+        setPasswordError('');
+        
+        const errorMsg = response.error || "";
+        
+        if (errorMsg.toLowerCase().includes('email')) {
+            setEmailError(errorMsg);
+        } 
+        else if (errorMsg.toLowerCase().includes('username')) {
+            setUsernameError(errorMsg);
+        }
+        else if (errorMsg.toLowerCase().includes('password')) {
+            setPasswordError(errorMsg);
+        }
+        else {
+            setError(errorMsg);
+        }
       }
-    }
-    catch(error){
+    } catch (error) {
       console.error(error)
+      setError('Failed to sign up')
+    } finally {
       setIsLoading(false)
-      setError("Failed to sign up")
     }
   }
 
@@ -70,6 +89,7 @@ export default function SignUp() {
                   onChange={(e) => setUsername(e.target.value)}
                   required 
                 />
+                {usernameError && <p className="text-sm text-red-500">{usernameError}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
@@ -93,6 +113,7 @@ export default function SignUp() {
                   onChange={(e) => setEmail(e.target.value)}
                   required 
                 />
+                {emailError && <p className="text-sm text-red-500">{emailError}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
@@ -104,6 +125,7 @@ export default function SignUp() {
                   onChange={(e) => setPassword(e.target.value)}
                   required 
                 />
+                {passwordError && <p className="text-sm text-red-500">{passwordError}</p>}
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -140,5 +162,5 @@ export default function SignUp() {
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

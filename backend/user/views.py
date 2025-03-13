@@ -19,32 +19,35 @@ class RegisterUser(APIView):
     serializer_class = RegisterSerializer  
     
     def post(self, request, *args, **kwargs): 
-        print("Received data:", request.data) 
         serializer = self.serializer_class(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user = serializer.save()  
         
-        response_data = {
-            "id": user.id,
-            "username": user.username,
-            "email": user.email,
-            "name": user.name
-        }
-        
-        return Response(response_data, status=status.HTTP_201_CREATED)
-    
-    def get_success_headers(self, data):
+        if not serializer.is_valid():
+            print("Validation errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
         try:
-            return {'Location': data.get('id')}
-        except (TypeError, KeyError):
-            return {}
+            user = serializer.save()
+            
+            response_data = {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "name": user.name
+            }
+            
+            return Response(response_data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(f"Error saving user: {str(e)}")
+            return Response(
+                {"detail": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
         
 class LoginView(APIView):
     authentication_classes = []  
     permission_classes = [] 
 
     def post(self, request):
-        print("Received data:", request.data)  
         serializer = LoginSerializer(data=request.data)
 
         if not serializer.is_valid():

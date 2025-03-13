@@ -22,16 +22,25 @@ export default function SignIn() {
 
   const handleSingIn = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    const password = event.currentTarget.password.value
+    const email = event.currentTarget.email.value
+    
     try {
-      const result = await signIn(email, password);
-      if (result && result.ok) {
+      const response = await signIn(email, password)  
+  
+      if (response.ok) {
         router.push('/')
-      } else {
-        setError("Invalid Credentials")
+      }
+      else {
+        setError(response.error || "An error occurred")
       }
     } catch (error) {
       console.error(error)
-      setError("An error occurred during sign-in")
+      setError("Failed to sign in")
+    } finally {
+      setIsLoading(false)
     }
   }
 

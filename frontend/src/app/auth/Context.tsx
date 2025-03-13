@@ -51,8 +51,8 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setIsReady(true);
     }, []);
 
-    const signIn = async (username: string, password: string): Promise<{ok: boolean; error?: string}> => {
-        const data = {username, password};
+    const signIn = async (email: string, password: string): Promise<{ok: boolean; error?: string}> => {
+        const data = {email, password};
     
         try {
             const response = await fetch("http://localhost:8000/api/user/login/", { 
@@ -69,7 +69,7 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setError(result.detail || "Login failed")
                 return { ok: false, error: result.detail || "login failed"}
             }
-            localStorage.setItem("token", result.token); 
+            localStorage.setItem("token", result.access); 
             localStorage.setItem("user", JSON.stringify(result.user))
             setToken(result.token);
             setUser(result.user);
@@ -83,28 +83,45 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 }; 
     
 const signUp = async (name: string, username: string, email: string, password: string): Promise<{ ok: boolean; error?: string }> => {
+    const data = { name, username, email, password };
+    
+    try {
+        const response = await fetch("http://localhost:8000/api/user/register/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
         
-        const data = { name, username, email, password }; 
+        const result = await response.json();
         
-        try{
-            const response = await fetch("http://localhost:8000/api/user/register/", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(data)
-            });
-
-            if(response.ok) {
-                return { ok: true }; 
-            } else {
-                const result = await response.json();
-                return { ok: false, error: result.error }; 
+        if (response.ok) {
+            return { ok: true };
+        } else {
+            let errorMessage = "Registration failed";
+            
+            if (result.email) {
+                errorMessage = `Email: ${result.email}`;
+            } else if (result.username) {
+                errorMessage = `Username: ${result.username}`;
+            } else if (result.detail) {
+                errorMessage = result.detail;
+            } else if (typeof result === 'object') {
+                const firstError = Object.entries(result)[0];
+                if (firstError) {
+                    const [field, messages] = firstError;
+                    errorMessage = `${field}: ${Array.isArray(messages) ? messages[0] : messages}`;
+                }
             }
-        }catch(error) {
-            return { ok: false, error: "An error occurred while signing up" }; 
+            
+            return { ok: false, error: errorMessage };
         }
-    };
+    } catch (error) {
+        console.error("Signup error:", error);
+        return { ok: false, error: "An error occurred while connecting to the server" };
+    }
+};
     
 const logout = () => {
     localStorage.removeItem("token");
