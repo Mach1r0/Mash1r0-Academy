@@ -69,13 +69,16 @@ const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                 setError(result.detail || "Login failed")
                 return { ok: false, error: result.detail || "login failed"}
             }
-            localStorage.setItem("token", result.access); 
-            localStorage.setItem("user", JSON.stringify(result.user))
-            setToken(result.token);
+
+            setToken(result.access);
             setUser(result.user);
+
+            localStorage.setItem("token", result.access);
+            localStorage.setItem("user", JSON.stringify(result.user));
+            
             router.push("/");
             return { ok: true }; 
-    }catch(error) {
+    } catch(error) {
         console.error("loggin error", error);
         setError("An error occured while loggin in"); 
         return { ok: false, error: "An error occured while loggin in" }

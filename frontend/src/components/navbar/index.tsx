@@ -1,10 +1,13 @@
 'use client';
-import type React from "react"
+import { useEffect } from 'react'; 
 import Link from 'next/link'
 import { useAuth } from "@/app/auth/Context" 
 
-export default function Navbar(){
-  const { user, logout, token } = useAuth()
+export default function Navbar() {
+  const { logout, token } = useAuth();
+
+  useEffect(() => {
+  }, [token]); // O efeito será executado sempre que o token mudar
 
   return (
     <header className="bg-primary text-primary-foreground shadow-lg">

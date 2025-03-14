@@ -6,7 +6,8 @@ class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='studant_profile')
     bio = models.TextField(blank=True)
     matricula = models.IntegerField()
-
+    image = models.ImageField(upload_to='student-image/')
+    
     def __str__(self):
         return f"Studant: {self.user.name}"
     
