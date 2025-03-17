@@ -14,19 +14,16 @@ import { useRouter } from "next/router"
 
 export default function ProfilePage() {
   const { user } = useAuth()
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
   
   useEffect(() => {
-  }, [user]);
+    if (!user) {
+      router.push('/sign-in')
+    }
+  }, [user, router])
 
   if (!user) {
-    return (
-      <div>
-        <h1 className="flex flex-col h-screen text-4x1 items-center justify-center text-blue-500">
-          You need to log in to show the profile page
-        </h1>
-      </div>
-    );
+    return null 
   }
 
   return (
@@ -54,7 +51,9 @@ export default function ProfilePage() {
                     <h2 className="text-2xl font-bold">{user.name}</h2>
                     <p className="text-sm text-muted-foreground">{user.email}</p>
                   </div>
-                  <Button className="w-full">Edit Profile</Button>
+                  <Link href="/profile/edit">
+                    <Button className="w-full">Edit Profile</Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>

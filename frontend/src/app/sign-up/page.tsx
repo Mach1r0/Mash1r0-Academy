@@ -73,7 +73,7 @@ export default function SignUp() {
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-[350px] shadow-lg">
         <CardHeader>
-          <CardTitle> Create a StudyQuest account </CardTitle>
+          <CardTitle> Create a account </CardTitle>
           <CardDescription> Enter your details to sign up </CardDescription>
         </CardHeader>
         <CardContent>

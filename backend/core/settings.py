@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'teacher',
     'student',
     'classroom', 
-    'course',
+    'theme',
     'content',
     'questions', 
     'StudentResponse',

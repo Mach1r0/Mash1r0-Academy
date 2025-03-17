@@ -48,7 +48,7 @@ export default function SignIn() {
     <div className="flex items-center justify-center min-h-screen bg-slate-50">
       <Card className="w-[350px] shadow-lg">
         <CardHeader>
-          <CardTitle>Sign in to StudyQuest</CardTitle>
+          <CardTitle>Sign in </CardTitle>
           <CardDescription>Enter your credentials to access your account</CardDescription>
         </CardHeader>
         <CardContent>
