@@ -14,9 +14,31 @@ export interface QuestionsResponse {
     error?: string;
 }
 
+export interface ThemesResponse {
+    ok: boolean;
+    name: string[];
+    description: string;
+    error?: string;
+}
+
+export async function fetchThemes() {
+    try { 
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}`;
+        if (!apiUrl) {
+            throw new Error("API URL is not defined in the environment variables.");
+        }
+        const response = await axios.get(`${apiUrl}/theme`);
+        return response.data as ThemesResponse;
+    }
+    catch (error) {
+        console.error("Error fetching themes:", error);
+        throw error;
+    }
+}
+
 export async function fetchQuestions() {
     try {
-        const apiUrl = `${process.env.REACT_APP_API_URL}/questions`;
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/questions`;
         if (!apiUrl) {
             throw new Error("API URL is not defined in the environment variables.");
         }
@@ -28,4 +50,6 @@ export async function fetchQuestions() {
     }
 }
 
-export async function 
+export async function FetchResponseStudent(){
+    
+}
