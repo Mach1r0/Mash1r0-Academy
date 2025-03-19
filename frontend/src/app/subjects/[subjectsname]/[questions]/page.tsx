@@ -16,14 +16,12 @@ export default function QuestionsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[1fr_300px]">
-        {/* Main Question Area */}
         <div className="space-y-6">
           <QuestionProgress />
           <CurrentQuestion />
           <QuestionNavigation />
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
           <QuizInfo />
           <QuestionList />

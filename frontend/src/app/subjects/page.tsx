@@ -1,16 +1,16 @@
 'use client';
 import React, { useEffect, useState } from 'react'
-import Navbar from '@/components/navbar/index'
-import Footer from '@/components/footer'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { BookOpen, Brain, Calculator, Code, Globe } from "lucide-react"
 import { fetchThemes } from '@/hooks/UseFetch'
+import Link from 'next/link'
 
 interface Theme {
   id: number;
   name: string;
   description: string;
+  slug: string; 
   created?: string;
   modified?: string;
 }
@@ -22,6 +22,14 @@ interface PaginatedResponse {
   results: Theme[];
 }
 
+function createSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
+    .replace(/\s+/g, '-')     // Substitui espaços por hífens
+    .replace(/-+/g, '-');     // Remove hífens redundantes
+}
+
 export default function CoursesPage() {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,6 +38,7 @@ export default function CoursesPage() {
   useEffect(() => {
     const getThemes = async () => {
       try {
+        
         setLoading(true);
         const response = await fetchThemes();
         
@@ -90,7 +99,9 @@ export default function CoursesPage() {
                       <CardDescription>{theme.description}</CardDescription>
                     </CardHeader>
                     <CardFooter>
-                      <Button variant="outline" className="w-full">Study</Button>
+                      <Link href={`/subjects/${createSlug(theme.name)}`}>
+                          <Button variant="outline" className="w-full">Study</Button>
+                      </Link>
                     </CardFooter>
                   </Card> 
                 ))

@@ -1,15 +1,33 @@
-import { CheckCircle, Code, FileText, PenTool, ListChecks, FileQuestion, Coins } from "lucide-react"
+'use client'
+import { useEffect, useState } from "react"
+import { CheckCircle, Code, FileText, PenTool, ListChecks, FileQuestion } from "lucide-react"
 import Link from "next/link"
+import { fetchThemeBySlug } from "@/hooks/UseFetch"
+import { useParams } from "next/navigation"
 
-interface themes {
+interface Theme {
     id: number;
     name: string;
     description: string;
     created?: string;
     modified?: string;
-} 
+    questions_count: number;
+    slug: string;
+    subthemes_count: number;
+}
 
-interface questions { 
+interface SubTheme {
+  id: number;
+  name: string;
+  description: string;
+  theme_name: string;
+  created?: string;
+  modified?: string;
+  questions_count: number;
+  slug: string;
+}
+
+interface Question { 
     id: number; 
     question: string; 
     options: string[]; 
@@ -18,18 +36,48 @@ interface questions {
 }
 
 export default function CourseDetail() {
+  const params = useParams();
+  const subjectId = params.subjectsname as string;
+  
+  const [theme, setTheme] = useState<Theme | null>(null);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const loadThemeData = async () => {
+      try {
+        setLoading(true);
+        const themeData = await fetchThemeBySlug(subjectId);
+        setTheme(themeData);
+        
+        console.log("Theme loaded:", themeData);
+      } catch (err) {
+        console.error("Error fetching theme:", err);
+        setError("Failed to load course data");
+      } finally {
+        setLoading(false);
+      }
+    };
     
+    if (subjectId) {
+      loadThemeData();
+    }
+  }, [subjectId]);
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Carregando curso...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-500">{error}</div>;
+  if (!theme) return <div className="min-h-screen flex items-center justify-center">Curso não encontrado</div>;
+
   return (
     <div className="min-h-screen bg-white">
-
-
       <main className="p-4 max-w-6xl mx-auto">
         <div className="flex items-center mb-6">
-          <Link href="/" className="text-gray-500 hover:text-black mr-2">
+          <Link href="/subjects" className="text-gray-500 hover:text-black mr-2">
             Cursos
           </Link>
           <span className="text-gray-500 mx-2">/</span>
-          <span className="font-medium">Data Structures & Algorithms</span>
+          <span className="font-medium">{theme.name}</span>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
@@ -40,19 +88,19 @@ export default function CourseDetail() {
                   <Code className="h-6 w-6" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Data Structures & Algorithms</h2>
-                  <p className="text-gray-500">Fundamentos de programação</p>
+                  <h2 className="text-xl font-bold">{theme.name}</h2>
+                  <p className="text-gray-500">{theme.description}</p>
                 </div>
               </div>
 
               <div className="space-y-4 mt-6">
                 <div className="flex items-center text-gray-600">
                   <ListChecks className="h-5 w-5 mr-2" />
-                  <span>45 questões no total</span>
+                  <span>{theme.questions_count} questões no total</span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <FileText className="h-5 w-5 mr-2" />
-                  <span>5 módulos</span>
+                  <span>{theme.subthemes_count} módulos</span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <CheckCircle className="h-5 w-5 mr-2" />
@@ -78,16 +126,15 @@ export default function CourseDetail() {
                   <span className="bg-black text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">
                     1
                   </span>
-                  <h4 className="font-medium">Introdução às Estruturas de Dados</h4>
+                  <h4 className="font-medium"> {theme.name}</h4>
                 </div>
-                <span className="text-sm text-gray-500">9 questões • 3 resolvidas</span>
               </div>
 
               <div className="divide-y">
                 <div className="p-4 flex items-center justify-between hover:bg-gray-50">
                   <div className="flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Definição de Estruturas de Dados</span>
+                    <span>Definição de {theme.name}</span>
                   </div>
                   <div className="flex items-center">
                     <span className="text-sm text-gray-500 mr-3">Fácil</span>
@@ -95,184 +142,17 @@ export default function CourseDetail() {
                   </div>
                 </div>
 
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Classificação de Estruturas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Fácil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Notação Big O</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <FileQuestion className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Análise de Complexidade</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <FileQuestion className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Comparação de Algoritmos</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
               </div>
             </div>
 
-            <div className="mb-6 border rounded-xl overflow-hidden">
-              <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
-                <div className="flex items-center">
-                  <span className="bg-black text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">
-                    2
-                  </span>
-                  <h4 className="font-medium">Arrays e Listas Encadeadas</h4>
-                </div>
-                <span className="text-sm text-gray-500">12 questões • 8 resolvidas</span>
-              </div>
-
-              <div className="divide-y">
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Operações em Arrays</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Fácil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Busca em Arrays</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Fácil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Arrays Multidimensionais</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <FileQuestion className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Implementação de Lista Encadeada</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Difícil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <FileQuestion className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Operações em Listas Encadeadas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Difícil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6 border rounded-xl overflow-hidden">
-              <div className="bg-gray-50 p-4 border-b flex justify-between items-center">
-                <div className="flex items-center">
-                  <span className="bg-black text-white rounded-full w-6 h-6 flex items-center justify-center mr-3">
-                    3
-                  </span>
-                  <h4 className="font-medium">Pilhas e Filas</h4>
-                </div>
-                <span className="text-sm text-gray-500">8 questões • 5 resolvidas</span>
-              </div>
-
-              <div className="divide-y">
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Conceito de Pilhas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Fácil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Operações em Pilhas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
-                    <span>Conceito de Filas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Fácil</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-
-                <div className="p-4 flex items-center justify-between hover:bg-gray-50">
-                  <div className="flex items-center">
-                    <FileQuestion className="h-5 w-5 text-blue-500 mr-3" />
-                    <span>Implementação de Filas</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-500 mr-3">Médio</span>
-                    <PenTool className="h-4 w-4 text-gray-500" />
-                  </div>
-                </div>
-              </div>
-            </div>
 
             <div className="mt-8 flex justify-center">
+              <Link href={'/subjects/'}>
               <button className="bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-8 rounded-lg flex items-center">
                 <PenTool className="h-5 w-5 mr-2" />
                 Continuar Estudando
               </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -280,4 +160,3 @@ export default function CourseDetail() {
     </div>
   )
 }
-

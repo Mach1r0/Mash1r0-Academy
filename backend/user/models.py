@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser, Group, Permission, BaseUserManager
 from django.utils.text import slugify
+from questions.models import Question
 
 class UserManager(BaseUserManager):
     def create_user(self, name, email, username, password=None, **extra_fields):
@@ -55,3 +56,4 @@ class User(AbstractUser):
     def save(self, *args, **kwargs):
         self.slug = slugify(self.username)
         super(User, self).save(*args, **kwargs)
+

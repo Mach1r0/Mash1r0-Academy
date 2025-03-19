@@ -50,6 +50,35 @@ export async function fetchQuestions() {
     }
 }
 
-export async function FetchResponseStudent(){
-    
+export async function fetchThemeBySlug(slug: string) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+    const response = await axios.get(`${apiUrl}theme/${slug}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching theme details:", error);
+    throw error;
+  }
+}
+
+export async function fetchQuestionsByTheme(themeId: string) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+    const response = await axios.get(`${apiUrl}theme/${themeId}/questions/`);
+    return response.data.results || [];
+  } catch (error) {
+    console.error("Error fetching theme questions:", error);
+    throw error;
+  }
+}
+
+export async function fetchSubThemesByTheme(themeId: string) {
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+    const response = await axios.get(`${apiUrl}theme/${themeId}/subthemes/`);
+    return response.data.results || [];
+  } catch (error) {
+    console.error("Error fetching subthemes:", error);
+    throw error;
+  }
 }
