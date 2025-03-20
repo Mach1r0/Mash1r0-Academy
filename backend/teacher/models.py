@@ -9,8 +9,3 @@ class Teacher(models.Model):
     def __str__(self):
         return f"Teacher: {self.user.name}"
     
-    def save(self, *args, **kwargs):
-        if self.user.role != 'teacher':
-            self.user.role = 'teacher'
-            self.user.save()
-        super(Teacher, self).save(*args, **kwargs)

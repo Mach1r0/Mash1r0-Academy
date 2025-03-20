@@ -26,13 +26,12 @@ class UserManager(BaseUserManager):
         return self.create_user(name, email, username, password, **extra_fields)
 
 class User(AbstractUser): 
-
-    ROLE = (
+    ROLE_CHOICES = (
         ('admin', 'Admin'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),
     )
-
+    
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=255, unique=True)
@@ -40,10 +39,7 @@ class User(AbstractUser):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_staff = models.BooleanField(default=False)    
-    role = models.CharField(max_length=255, choices=ROLE, default='student')
-    groups = models.ManyToManyField(Group, related_name='user_groups')
-    user_permissions = models.ManyToManyField(Permission, related_name='user_permissions')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='student')
 
     objects = UserManager()
 

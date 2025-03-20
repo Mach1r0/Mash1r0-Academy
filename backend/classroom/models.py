@@ -6,4 +6,4 @@ class Class(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     teacher = models.ForeignKey('teacher.Teacher', on_delete=models.CASCADE)
-    students = models.ManyToManyField('student.Student')
+    students = models.ManyToManyField('student.Student', null=True, blank=True)

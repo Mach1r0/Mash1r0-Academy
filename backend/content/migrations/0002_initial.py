@@ -8,14 +8,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('classroom', '0001_initial'),
-        ('student', '0001_initial'),
+        ('content', '0001_initial'),
+        ('questions', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='class',
-            name='students',
-            field=models.ManyToManyField(to='student.student'),
+            model_name='content',
+            name='questions',
+            field=models.ManyToManyField(related_name='content_questions', to='questions.question'),
         ),
     ]

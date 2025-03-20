@@ -82,3 +82,24 @@ export async function fetchSubThemesByTheme(themeId: string) {
     throw error;
   }
 }
+
+export async function FetchStudentReponse(){
+  try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhot:8000/';
+    const response = await axios.get(`${apiUrl}studentresponse/`) 
+    return response.data.results || [];
+  } catch (error) {
+    console.error("error fetching student response:", error)
+  }
+}
+
+export async function FetchQuestionsByTheme(){
+  try { 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/';
+    const response = await axios.get(`${apiUrl}theme/1/questions/`)
+    return response.data.results || [];
+  }
+  catch (error) {
+    console.error("Error fetching questions by theme:", error)
+  }
+}

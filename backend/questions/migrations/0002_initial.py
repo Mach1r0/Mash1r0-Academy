@@ -9,14 +9,14 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('classroom', '0002_initial'),
-        ('teacher', '0001_initial'),
+        ('questions', '0001_initial'),
+        ('theme', '0001_initial'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='class',
-            name='teacher',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='teacher.teacher'),
+            model_name='question',
+            name='theme',
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='theme_questions', to='theme.theme'),
         ),
     ]

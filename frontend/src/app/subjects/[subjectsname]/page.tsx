@@ -104,7 +104,7 @@ export default function CourseDetail() {
                 </div>
                 <div className="flex items-center text-gray-600">
                   <CheckCircle className="h-5 w-5 mr-2" />
-                  <span>20 questões resolvidas</span>
+                  <span>{} questões resolvidas</span>
                 </div>
               </div>
 

@@ -11,8 +11,3 @@ class Student(models.Model):
     def __str__(self):
         return f"Studant: {self.user.name}"
     
-    def save(self, *args, **kwargs):
-        if self.user.role != 'studant':
-            self.user.role = 'studant'
-            self.user.save()
-        super(Student, self).save(*args, **kwargs)

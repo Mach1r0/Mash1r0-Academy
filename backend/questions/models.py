@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 
 class Question(models.Model):
     DIFFICULTY_CHOICES = [
@@ -14,7 +15,3 @@ class Question(models.Model):
     explanation = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    slug = models.SlugField()
-
-    def __str__(self):
-        return self.title
