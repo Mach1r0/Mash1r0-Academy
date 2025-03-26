@@ -8,7 +8,7 @@ from classroom.views import ClassViewSet
 from theme.views import ThemeViewSet, SubThemeViewSet
 from content.views import ContentViewSet
 from questions.views import QuestionViewSet
-from StudentResponse.views import StudentResponseViewSet, StudentThemeProgressViewSet  # Adicione o import
+from StudentResponse.views import StudentResponseViewSet, StudentThemeProgressViewSet 
 from django.conf import settings  
 from django.conf.urls.static import static
 
@@ -29,5 +29,5 @@ urlpatterns = [
     path('', include(router.urls)),  
     path('admin/', admin.site.urls),
     path('api/user/', include('user.urls')),
-    path('api/student-response/', include('StudentResponse.urls')),  # Adicione esta linha
+    path('api/student-response/', include('StudentResponse.urls')), 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
