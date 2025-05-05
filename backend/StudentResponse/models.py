@@ -6,7 +6,7 @@ class StudentResponse(models.Model):
     student = models.ForeignKey('student.Student', on_delete=models.CASCADE, related_name='responses', )
     question = models.ForeignKey('questions.Question', on_delete=models.CASCADE, related_name='responses')
     response = models.TextField() 
-    booleaniscorrect = models.BooleanField(db_column='booleanIsCorrect', default=False)  
+    booleaniscorrect = models.BooleanField(db_column='booleanIsCorrect', null=True, blank=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -19,3 +19,6 @@ class StudentResponse(models.Model):
     def __str__(self):
         status = 'correct' if self.booleaniscorrect else 'incorrect'
         return f"{self.student.user.username} - Q{self.question.id} - {status}"
+    
+
+

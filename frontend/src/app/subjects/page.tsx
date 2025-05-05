@@ -25,9 +25,9 @@ interface PaginatedResponse {
 function createSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '') // Remove caracteres especiais
-    .replace(/\s+/g, '-')     // Substitui espaços por hífens
-    .replace(/-+/g, '-');     // Remove hífens redundantes
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')     
+    .replace(/-+/g, '-');     
 }
 
 export default function CoursesPage() {

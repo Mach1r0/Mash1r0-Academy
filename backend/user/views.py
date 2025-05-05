@@ -10,6 +10,12 @@ import logging, datetime
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.authtoken.models import Token
+from django.db import IntegrityError
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import AllowAny
+from student.models import Student  # Importe o modelo Student
+
+User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -36,62 +42,68 @@ class RegisterUser(APIView):
             }
             
             return Response(response_data, status=status.HTTP_201_CREATED)
+        except IntegrityError as e:
+            error_msg = str(e).lower()
+            print(f"Integrity error: {error_msg}")
+
+            # Mapeamento de termos nos erros para mensagens amigáveis
+            error_mapping = {
+                "slug": "Este nome de usuário já está em uso. Por favor, escolha outro.",
+                "email": "Este email já está em uso. Por favor, utilize outro.",
+                "username": "Este nome de usuário já está em uso. Por favor, escolha outro."
+            }
+            
+            for key, message in error_mapping.items():
+                if key in error_msg:
+                    return Response({"detail": message}, status=status.HTTP_400_BAD_REQUEST)
+            
+            return Response(
+                {"detail": "Não foi possível criar o usuário devido a um conflito nos dados."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
         except Exception as e:
             print(f"Error saving user: {str(e)}")
             return Response(
-                {"detail": str(e)}, 
+                {"detail": "Ocorreu um erro ao criar o usuário. Por favor, tente novamente."}, 
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+                
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def LoginView(request):
+    email = request.data.get('email', '')
+    password = request.data.get('password', '')
+    
+    try:
+        user = User.objects.get(email=email)
         
-class LoginView(APIView):
-    authentication_classes = []  
-    permission_classes = [] 
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-
-        if not serializer.is_valid():
-            print("Serializer errors:", serializer.errors)  
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        email = serializer.validated_data['email']
-        password = serializer.validated_data['password']
-        
-        try:
-            user = User.objects.get(email=email)
+        if user.check_password(password):
+            refresh = RefreshToken.for_user(user)
+            access = refresh.access_token
             
-            if user.check_password(password):
-                refresh = RefreshToken.for_user(user)
-                access = refresh.access_token
+            student_id = None
+            try:
+                student = Student.objects.get(user=user)
+                student_id = student.id
+            except Student.DoesNotExist:
+                pass
                 
-                user_data = {
-                    'id': user.id,
-                    'username': user.username,
-                    'name': getattr(user, 'name', ''),
-                    'email': user.email
-                }
-                
-                if hasattr(user, 'slug'):
-                    user_data['slug'] = user.slug
-                
-                if hasattr(user, 'picture') and user.picture:
-                    try:
-                        user_data['picture'] = user.picture.url
-                    except:
-                        user_data['picture'] = None
-                
-                return Response({
-                    'refresh': str(refresh),
-                    'access': str(access),
-                    'user': user_data
-                }, status=status.HTTP_200_OK)
-            else:
-                print(f"Password verification failed for user {email}")
-                return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        except User.DoesNotExist:
-            print(f"User {email} not found")
-            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-        except Exception as e:
-            print(f"Error during login: {str(e)}")
-            return Response({'detail': 'An error occurred during login'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            user_data = {
+                'id': user.id,
+                'username': user.username,
+                'name': getattr(user, 'name', ''),
+                'email': user.email, 
+                'student_id': student_id, 
+                'slug': getattr(user, 'slug', ''),
+            }
+            
+            return Response({
+                'refresh': str(refresh),
+                'access': str(access),
+                'user': user_data
+            })
+        else:
+            return Response({'detail': 'Credenciais inválidas'}, status=400)
+            
+    except User.DoesNotExist:
+        return Response({'detail': 'Usuário não encontrado'}, status=404)

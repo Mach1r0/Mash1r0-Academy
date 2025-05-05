@@ -11,6 +11,10 @@ class Theme(models.Model):
     questions = models.ManyToManyField('questions.Question', related_name='themes')
     slug = models.SlugField()
 
+
+    def __str__(self):
+        return self.name
+    
     def save(self, *args, **kwargs):
         self.slug = slugify(self.name)
         super(Theme, self).save(*args, **kwargs)
