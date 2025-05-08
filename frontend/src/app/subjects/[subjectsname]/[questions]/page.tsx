@@ -14,12 +14,12 @@ import {
   saveStudentResponse,
   updateStudentResponse,
   checkStudentResponse,
-  saveMultipleStudentResponses
+  saveMultipleStudentResponses, 
+  saveMultipleResponses
 } from "@/hooks/UseFetch"
 import { useToast } from "@/components/ui/use-toast"
-import { useAuth } from "@/app/auth/Context" // Assume que você tem um hook de autenticação
+import { useAuth } from "@/app/auth/Context" 
 
-// Interface para a estrutura da questão
 interface Question {
   id: number
   title: string
@@ -29,6 +29,7 @@ interface Question {
   explanation: string
   subtheme: number
   theme_name: string
+  subtheme_name:string 
 }
 
 interface QuestionNavigatorProps {
@@ -50,7 +51,7 @@ export function QuestionNavigator({
   const [loading, setLoading] = useState(true)
   const searchParams = useSearchParams()
   const subthemeId = searchParams.get('subtheme')
-  const { token } = useAuth() // Use o token do contexto de autenticação em vez do localStorage
+  const { token } = useAuth() 
   
   useEffect(() => {
     const loadQuestions = async () => {
@@ -161,13 +162,27 @@ export function QuestionNavigator({
   )
 }
 
+interface SubTheme {
+  id: number;
+  name: string;
+  description?: string;
+  theme_name?: string;
+  questions_count?: number;
+  slug?: string;
+}
+
 export default function QuestionsPage() {
   const params = useParams()
   const searchParams = useSearchParams()
   const subjectSlug = params.subjectsname as string
   const subthemeId = searchParams.get('subtheme')
   const questionId = searchParams.get('question')
-  const [theme, setTheme] = useState<any | null>(null)
+  const [theme, setTheme] = useState<{
+    id: number;
+    name: string;
+    description?: string;
+    subthemes?: SubTheme[];
+  } | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -180,8 +195,9 @@ export default function QuestionsPage() {
   const [themeId, setThemeId] = useState<string | null>(null)
   const router = useRouter(); 
   const { toast } = useToast()
-  const { user, token } = useAuth() // Use o token do contexto de autenticação
+  const { user, token } = useAuth()
   const [submitting, setSubmitting] = useState(false)
+  const [subthemeName, setSubthemeName] = useState<string>("")
 
   useEffect(() => {
     const loadData = async () => {
@@ -207,7 +223,7 @@ export default function QuestionsPage() {
           const allQuestionsData = await fetchQuestionsByTheme(themeData.id.toString())
           const allQuestions = allQuestionsData.results || []
           
-          const specificQuestion = allQuestions.find(q => q.id.toString() === questionId)
+          const specificQuestion = allQuestions.find((q: Question) => q.id.toString() === questionId)
           if (specificQuestion) {
             questionData = [specificQuestion] 
             
@@ -220,6 +236,25 @@ export default function QuestionsPage() {
           console.log("Carregando questões do subtema:", subthemeId);
           const data = await fetchQuestionsBySubtheme(subthemeId)
           questionData = data.results || []
+          
+          if (data.subtheme_name) {
+            setSubthemeName(data.subtheme_name)
+          } else if (questionData.length > 0 && questionData[0].subtheme_name) {
+            setSubthemeName(questionData[0].subtheme_name)
+          } else {
+            try {
+              const subthemes = theme?.subthemes || []
+              const matchingSubtheme = subthemes.find((st: SubTheme) => st.id.toString() === subthemeId)
+              if (matchingSubtheme) {
+                setSubthemeName(matchingSubtheme.name)
+              } else {
+                setSubthemeName(`Subtema ${subthemeId}`)
+              }
+            } catch (err) {
+              console.error("Error fetching subtheme name:", err)
+              setSubthemeName(`Subtema ${subthemeId}`)
+            }
+          }
         } else {
           console.log("Carregando todas as questões do tema:", themeData.id);
           const data = await fetchQuestionsByTheme(themeData.id.toString())
@@ -239,7 +274,6 @@ export default function QuestionsPage() {
     loadData()
   }, [subjectSlug, subthemeId, questionId])
 
-  // Carregar resposta atual quando mudar de questão
   useEffect(() => {
     if (questions.length > 0) {
       const currentQuestionId = questions[currentQuestionIndex]?.id
@@ -247,7 +281,6 @@ export default function QuestionsPage() {
     }
   }, [currentQuestionIndex, questions, userAnswers])
 
-  // Timer para contagem regressiva
   useEffect(() => {
     if (quizFinished || timeRemaining <= 0) return
 
@@ -258,7 +291,6 @@ export default function QuestionsPage() {
     return () => clearInterval(timer)
   }, [timeRemaining, quizFinished])
 
-  // Funções auxiliares
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
@@ -267,110 +299,117 @@ export default function QuestionsPage() {
 
   const handleNext = () => {
     if (currentQuestionIndex < questions.length - 1) {
-      saveCurrentAnswer()
+      saveCurrentAnswer(false)
       setCurrentQuestionIndex((prev) => prev + 1)
     }
   }
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
-      saveCurrentAnswer()
+      saveCurrentAnswer(false)
       setCurrentQuestionIndex((prev) => prev - 1)
     }
   }
 
-  const saveCurrentAnswer = async () => {
-    if (!user || !token) { // Verifique tanto o usuário quanto o token
-      toast({
-        title: "Erro",
-        description: "Você precisa estar logado para salvar respostas",
-        variant: "destructive"
-      })
-      return
+  const saveCurrentAnswer = async (silent = false) => {
+    if (!user || !token) {
+      if (!silent) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar logado para salvar respostas",
+          variant: "destructive"
+        })
+      }
+      return null
     }
     
     const currentQuestion = questions[currentQuestionIndex]
-    if (!currentQuestion) return
+    if (!currentQuestion) return null
     
     const answer = currentAnswer 
     if (!answer || !answer.trim()) {
-      toast({
-        title: "Resposta vazia",
-        description: "Por favor, forneça uma resposta antes de salvar",
-        variant: "destructive"
-      })
-      return
+      if (!silent) {
+        toast({
+          title: "Resposta vazia",
+          description: "Por favor, forneça uma resposta antes de salvar",
+          variant: "destructive"
+        })
+      }
+      return null
     }
     
     try {
-      setSubmitting(true)
+      if (!silent) setSubmitting(true)
       
-      // Salvar resposta no estado local primeiro
       setUserAnswers(prev => ({
         ...prev,
         [currentQuestion.id]: answer
       }))
       
-      // Verificar se é uma resposta correta
       const isCorrect = answer.toLowerCase() === currentQuestion.answer.toLowerCase()
       
-      // Verificar se já existe uma resposta para esta questão
       if (!token) {
-        toast({
-          title: "Erro",
-          description: "Problemas com seus dados de estudante. Por favor, contate o suporte.",
-          variant: "destructive"
-        })
+        if (!silent) {
+          toast({
+            title: "Erro",
+            description: "Problemas com seus dados de estudante. Por favor, contate o suporte.",
+            variant: "destructive"
+          })
+        }
         return null
       }
       
-      const existingResponse = await checkStudentResponse(user.student_id, currentQuestion.id)
+      const existingResponse = await checkStudentResponse(
+        user.student_id || 0, 
+        currentQuestion.id || 0
+      )
       
       let result
       if (existingResponse) {
-        // Atualizar resposta existente
         result = await updateStudentResponse(existingResponse.id, {
           response: answer,
           booleaniscorrect: isCorrect
         })
       } else {
-        // Criar nova resposta
         result = await saveStudentResponse({
-          student: user.student_id,
+          student: user.student_id || 0,
           question: currentQuestion.id,
           response: answer,
           booleaniscorrect: isCorrect
         })
       }
       
-      // Atualizar estado para mostrar que foi salvo
       setSavedStatus(prev => ({
         ...prev,
         [currentQuestion.id]: true
       }))
       
-      toast({
-        title: "Resposta salva",
-        description: "Sua resposta foi salva com sucesso",
-        variant: "default"
-      })
+      if (!silent) {
+        toast({
+          title: "Resposta salva",
+          description: "Sua resposta foi salva com sucesso",
+          variant: "default"
+        })
+      }
       
       return result
     } catch (error) {
       console.error("Erro ao salvar resposta:", error)
-      toast({
-        title: "Erro ao salvar",
-        description: "Não foi possível salvar sua resposta. Tente novamente.",
-        variant: "destructive"
-      })
+      if (!silent) {
+        toast({
+          title: "Erro ao salvar",
+          description: "Não foi possível salvar sua resposta. Tente novamente.",
+          variant: "destructive"
+        })
+      }
       return null
     } finally {
-      setSubmitting(false)
+      if (!silent) setSubmitting(false)
     }
   }
 
   const handleSelectQuestion = (index: number) => {
-    saveCurrentAnswer()
+    saveCurrentAnswer(false)
     setCurrentQuestionIndex(index)
   }
 
@@ -384,30 +423,46 @@ export default function QuestionsPage() {
       return
     }
     
-    await saveCurrentAnswer()
-    
     try {
       setSubmitting(true)
       
-      // Preparar todas as respostas para envio
-      const responsesToSave = Object.entries(userAnswers).map(([questionId, answer]) => {
+      // First save the current answer and wait for it to complete
+      const currentQuestion = questions[currentQuestionIndex]
+      if (currentQuestion && currentAnswer.trim() !== "") {
+        // Update userAnswers immediately for the current question to ensure it's included
+        setUserAnswers(prev => ({
+          ...prev,
+          [currentQuestion.id]: currentAnswer
+        }))
+        
+        // Then save it to the server
+        await saveCurrentAnswer(true)
+      }
+      
+      // After current answer is saved, get updated userAnswers state
+      const updatedUserAnswers = {
+        ...userAnswers,
+        // Include current answer again to be extra safe (in case state update hasn't propagated)
+        ...(currentQuestion && currentAnswer.trim() !== "" ? { [currentQuestion.id]: currentAnswer } : {})
+      }
+      
+      // Formato adaptado para o novo endpoint
+      const formattedResponses = Object.entries(updatedUserAnswers).map(([questionId, answer]) => {
         const question = questions.find(q => q.id === parseInt(questionId))
         const isCorrect = question ? answer.toLowerCase() === question.answer.toLowerCase() : false
         
         return {
-          student: user.student_id,
-          question: parseInt(questionId),
+          question_id: parseInt(questionId),
           response: answer,
-          booleaniscorrect: isCorrect
+          is_correct: isCorrect
         }
       })
       
-      console.log("Todas as respostas do usuário:", userAnswers);
-      console.log("Respostas formatadas para envio:", responsesToSave);
+      console.log("Todas as respostas do usuário:", updatedUserAnswers);
+      console.log("Respostas formatadas para o novo endpoint:", formattedResponses);
       
-      // Filtrar apenas respostas que têm conteúdo
-      const validResponses = responsesToSave.filter(r => r.response && r.response.trim() !== "")
-      console.log("Respostas válidas a serem enviadas:", validResponses);
+      // Filtrar apenas respostas não vazias
+      const validResponses = formattedResponses.filter(r => r.response && r.response.trim() !== "")
       
       if (validResponses.length === 0) {
         toast({
@@ -418,20 +473,19 @@ export default function QuestionsPage() {
         return
       }
       
-      // Enviar respostas para o backend
-      const result = await saveMultipleStudentResponses(validResponses)
-      console.log("Resultado do envio das respostas:", result);
-    
+      const result = await saveMultipleResponses(user.student_id, validResponses)
+      console.log("Resultado do envio com o novo endpoint:", result);
+      
+      const successCount = result.created + (result.updated || 0);
+      
       toast({
         title: "Quiz finalizado",
-        description: `${result.length} respostas foram salvas com sucesso`,
+        description: `${successCount} respostas foram salvas com sucesso`,
         variant: "default"
       })
       
-      // Marcar o quiz como finalizado
       setQuizFinished(true)
       
-      // Opcionalmente, redirecionar após alguns segundos
       setTimeout(() => {
         router.push(`/subjects/${subjectSlug}`)
       }, 3000)
@@ -449,35 +503,26 @@ export default function QuestionsPage() {
   }
 
   const handleQuestionNavigation = (questionId: number) => {
-    // Verificar se já estamos nessa questão
     if (questions[currentQuestionIndex]?.id === questionId) {
-      return; // Não faça nada se já estamos na questão selecionada
+      return;
     }
     
-    // Salvar a resposta atual antes de navegar
-    saveCurrentAnswer();
+    saveCurrentAnswer(false);
     
-    // Encontrar o índice da questão no array local
     const index = questions.findIndex((q) => q.id === questionId);
     if (index !== -1) {
-      // Se a questão estiver no array atual, apenas atualize o índice
       setCurrentQuestionIndex(index);
     } else {
-      // Se a questão não estiver no array atual, redirecione para ela
-      // Construir a URL com base no contexto atual
       let url = `/subjects/${params.subjectsname}/questions?question=${questionId}`;
       
-      // Se estamos em um subtema específico, mantenha esse contexto
       if (subthemeId) {
         url += `&subtheme=${subthemeId}`;
       }
       
-      // Redirecionar para a nova URL
       router.push(url);
     }
   };
 
-  // Estados computados
   const currentQuestion = questions[currentQuestionIndex] || ({} as Question)
   const progress = ((currentQuestionIndex + 1) / questions.length) * 100
   const isSaved = savedStatus[currentQuestion.id] || false
@@ -574,7 +619,7 @@ export default function QuestionsPage() {
               </div>
 
               {!quizFinished ? (
-                <Button size="sm" className="gap-1" onClick={saveCurrentAnswer} disabled={currentAnswer.trim() === ""}>
+                <Button size="sm" className="gap-1" onClick={() => saveCurrentAnswer(false)} disabled={currentAnswer.trim() === ""}>
                   <Save className="h-4 w-4" />
                   Salvar resposta
                 </Button>
@@ -634,6 +679,12 @@ export default function QuestionsPage() {
               <div>
                 <h4 className="font-medium mb-1">Questões</h4>
                 <p className="text-sm text-muted-foreground">{questions.length} questões</p>
+              </div>
+              <div>
+                <h4 className="font-medium mb-1">SubThema</h4>
+                <p className="text-sm text-muted-foreground">
+                  {subthemeId && subthemeName ? subthemeName : currentQuestion.subtheme_name || "Questões Gerais"}
+                </p>
               </div>
               <Separator />
               <div className="pt-2">

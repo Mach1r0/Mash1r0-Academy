@@ -71,7 +71,6 @@ export default function SettingsTab() {
         </CardContent>
       </Card>
       
-      {/* Seção de Alteração de Senha */}
       <Card>
         <CardHeader>
           <CardTitle>Alterar Senha</CardTitle>

@@ -2,7 +2,13 @@
 import { useEffect, useState } from "react"
 import { CheckCircle, Code, FileText, PenTool, ListChecks, ArrowRight, BookOpen, FileQuestion } from "lucide-react"
 import Link from "next/link"
-import { fetchThemeBySlug, fetchQuestionsByTheme } from "@/hooks/UseFetch"
+import { 
+  fetchThemeBySlug, 
+  fetchQuestionsByTheme, 
+  fetchAllSubthemeQuestions, 
+  fetchAnsweredQuestions,
+  fetchThemeWithDetails
+} from "@/hooks/UseFetch"
 import { useParams } from "next/navigation"
 import axios from "axios"
 import { useAuth } from "@/app/auth/Context" 
@@ -64,34 +70,17 @@ const checkQuestionAnswered = async (studentId: number, questionId: number): Pro
   }
 }
 
-const fetchAnsweredQuestions = async (studentId: number): Promise<number[]> => {
-  try {
-    console.log(`Buscando questões respondidas para o estudante ${studentId}`);
-    
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/student-response/answered-questions`,
-      { 
-        params: { student_id: studentId },
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      }
-    );
-    
-    console.log("Resposta da API de questões respondidas:", response.data);
-    
-    if (response.data && Array.isArray(response.data.answered_question_ids)) {
-      return response.data.answered_question_ids;
-    }
-    
-    return [];
-  } catch (error) {
-    console.error("Erro ao buscar questões respondidas:", error);
-    return [];
-  }
-};
+// Add a wrapper component that includes the key prop
+export default function CourseDetailWrapper() {
+  const params = useParams()
+  const subjectId = params.subjectsname as string
+  
+  // Using the subjectId as key will force a complete re-render when it changes
+  return <CourseDetail key={subjectId} />
+}
 
-export default function CourseDetail() {
+// The original component is now renamed and accepts no props
+function CourseDetail() {
   const params = useParams()
   const subjectId = params.subjectsname as string
 
@@ -103,25 +92,90 @@ export default function CourseDetail() {
   const [completedQuestions, setCompletedQuestions] = useState(0)
   const { user } = useAuth()
   const [answeredQuestions, setAnsweredQuestions] = useState<Record<number, boolean>>({})
-
   const [themeId, setThemeId] = useState<string | null>(null)
+  const [expandedSubthemes, setExpandedSubthemes] = useState<Record<number, boolean>>({})
+
+  // Reset all state when component unmounts or subjectId changes
+  useEffect(() => {
+    return () => {
+      setTheme(null)
+      setAllQuestions([])
+      setQuestionsBySubtheme({})
+      setLoading(true)
+      setError(null)
+      setCompletedQuestions(0)
+      setAnsweredQuestions({})
+      setThemeId(null)
+      setExpandedSubthemes({})
+    }
+  }, [subjectId])
 
   useEffect(() => {
     const loadThemeData = async () => {
       try {
+        // Reset state when theme changes
+        setTheme(null)
+        setAllQuestions([])
+        setQuestionsBySubtheme({})
+        setThemeId(null)
         setLoading(true)
-        console.log("Carregando tema com slug:", subjectId);
-        const themeData = await fetchThemeBySlug(subjectId)
-        console.log("Tema carregado:", themeData);
-        setTheme(themeData)
         
-        // Quando temos os dados do tema, armazenamos o ID
-        if (themeData && themeData.id) {
-          console.log("Definindo themeId:", themeData.id.toString());
-          setThemeId(themeData.id.toString())
-        } else {
-          console.error("Tema carregado não possui ID:", themeData);
+        console.log("Carregando tema com slug:", subjectId);
+        
+        // Use the comprehensive fetch function that gets theme, questions and organizes by subtheme
+        const completeThemeData = await fetchThemeWithDetails(subjectId);
+        console.log("Tema e questões carregados:", completeThemeData);
+        
+        if (!completeThemeData) {
+          console.error("Tema não encontrado para slug:", subjectId);
+          setError("Tema não encontrado")
+          return
         }
+        
+        // Set theme data
+        setTheme(completeThemeData)
+        
+        // Set theme ID for additional data loading if needed
+        if (completeThemeData.id) {
+          console.log("Definindo themeId:", completeThemeData.id.toString());
+          setThemeId(completeThemeData.id.toString())
+        } else {
+          console.error("Tema carregado não possui ID:", completeThemeData);
+          setError("Tema sem ID válido")
+          return
+        }
+        
+        // Set all questions and organized by subtheme
+        if (completeThemeData.allQuestions) {
+          console.log(`Setting ${completeThemeData.allQuestions.length} total questions`);
+          setAllQuestions(completeThemeData.allQuestions);
+        }
+        
+        if (completeThemeData.questionsBySubtheme) {
+          console.log("Questions by subtheme received from API:");
+          Object.entries(completeThemeData.questionsBySubtheme).forEach(([subthemeId, questions]) => {
+            console.log(`- Subtheme ${subthemeId}: ${Array.isArray(questions) ? questions.length : 0} questions`);
+          });
+          
+          setQuestionsBySubtheme(completeThemeData.questionsBySubtheme);
+        } else {
+          console.warn("No questionsBySubtheme data received");
+        }
+        
+        // Update completion status if user is logged in
+        if (user && user.student_id && completeThemeData.allQuestions?.length > 0) {
+          try {
+            const answeredIds = await fetchAnsweredQuestions(user.student_id);
+            const completedCount = answeredIds.filter((id: number) => 
+              completeThemeData.allQuestions.some((q: Question) => q.id === id)
+            ).length;
+            setCompletedQuestions(completedCount);
+          } catch (err) {
+            console.error("Erro ao calcular questões completadas:", err);
+            setCompletedQuestions(0);
+          }
+        }
+        
       } catch (err) {
         console.error("Error fetching theme:", err)
         setError("Failed to load course data")
@@ -133,46 +187,7 @@ export default function CourseDetail() {
     if (subjectId) {
       loadThemeData()
     }
-  }, [subjectId])
-
-  // Segundo useEffect: carrega as questões quando o themeId estiver disponível
-  useEffect(() => {
-    const loadQuestions = async () => {
-      if (themeId) {
-        try {
-          console.log("Buscando questões para o tema ID:", themeId)
-          const data = await fetchQuestionsByTheme(themeId)
-          console.log("Dados de questões recebidos:", data)
-          
-          // Extrair questões dos resultados
-          const questionsData = Array.isArray(data) ? data : (data.results || [])
-          console.log("Array de questões:", questionsData);
-          setAllQuestions(questionsData)
-          
-          // Simula algumas questões completadas (substitua por lógica real)
-          setCompletedQuestions(Math.floor(questionsData.length * 0.45))
-          
-          // Agrupar questões por subtema
-          const questionGroups: { [key: number]: Question[] } = {}
-          questionsData.forEach((question: Question) => {
-            if (!questionGroups[question.subtheme]) {
-              questionGroups[question.subtheme] = []
-            }
-            questionGroups[question.subtheme].push(question)
-          })
-          
-          console.log("Questões agrupadas por subtema:", questionGroups);
-          setQuestionsBySubtheme(questionGroups)
-        } catch (qErr) {
-          console.error("Error fetching questions:", qErr)
-        }
-      } else {
-        console.log("Não foi possível carregar questões: themeId é nulo");
-      }
-    }
-    
-    loadQuestions()
-  }, [themeId])  
+  }, [subjectId, user as any])
 
   useEffect(() => {
     const loadAnsweredStatus = async () => {
@@ -223,7 +238,20 @@ export default function CourseDetail() {
   if (!theme) return <div className="min-h-screen flex items-center justify-center">Curso não encontrado</div>
 
   const getSubthemeQuestions = (subthemeId: number) => {
-    return questionsBySubtheme[subthemeId] || []
+    console.log(`Getting questions for subtheme ${subthemeId}`);
+    console.log(`Available subthemes: ${Object.keys(questionsBySubtheme).join(', ')}`);
+    
+    const questions = questionsBySubtheme[subthemeId] || [];
+    console.log(`Found ${questions.length} questions for subtheme ${subthemeId}`);
+    
+    return questions;
+  }
+
+  const toggleExpandSubtheme = (subthemeId: number) => {
+    setExpandedSubthemes(prev => ({
+      ...prev,
+      [subthemeId]: !prev[subthemeId]
+    }));
   }
 
   const progressPercentage =
@@ -297,7 +325,9 @@ export default function CourseDetail() {
 
             {theme.subthemes &&
               theme.subthemes.map((subtheme) => {
-                const subthemeQuestions = getSubthemeQuestions(subtheme.id)
+                console.log(`Rendering subtheme ${subtheme.id}: ${subtheme.name}`);
+                const subthemeQuestions = getSubthemeQuestions(subtheme.id);
+                console.log(`Subtheme ${subtheme.id} has ${subthemeQuestions.length} questions`);
 
                 return (
                   <div key={subtheme.id} className="mb-6 bg-white border rounded-xl overflow-hidden shadow-sm">
@@ -320,7 +350,9 @@ export default function CourseDetail() {
 
                     <div className="divide-y">
                       {subthemeQuestions.length > 0 ? (
-                        subthemeQuestions.slice(0, 3).map((question) => (
+                        subthemeQuestions
+                          .slice(0, expandedSubthemes[subtheme.id] ? subthemeQuestions.length : 3)
+                          .map((question) => (
                           <div key={question.id} className="p-4 flex items-center justify-between hover:bg-gray-50">
                             <div className="flex items-center">
                               <span className="text-gray-600">{question.title}</span>
@@ -363,11 +395,14 @@ export default function CourseDetail() {
 
                       {subthemeQuestions.length > 3 && (
                         <div className="p-4 text-center">
-                          <Link href={`/subjects/${theme.slug}/questions?subtheme=${subtheme.id}`}>
-                            <button className="text-blue-500 hover:text-blue-700 text-sm font-medium">
-                              Ver mais {subthemeQuestions.length - 3} questões
-                            </button>
-                          </Link>
+                          <button 
+                            onClick={() => toggleExpandSubtheme(subtheme.id)}
+                            className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                          >
+                            {expandedSubthemes[subtheme.id] 
+                              ? "Mostrar menos" 
+                              : `Ver mais ${subthemeQuestions.length - 3} questões`}
+                          </button>
                         </div>
                       )}
                     </div>

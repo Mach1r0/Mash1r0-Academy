@@ -13,7 +13,7 @@ class SubThemeSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = SubTheme
-        fields = ['id', 'name', 'description', 'theme_name', 'theme_id', 'created', 'modified', 'questions_count'] 
+        fields = ['id', 'name', 'description', 'theme_name', 'theme_id', 'created', 'modified', 'questions_count', 'slug'] 
     
     def get_questions_count(self, obj): 
         return obj.questions.count()
@@ -35,7 +35,7 @@ class ThemeSerializer(serializers.ModelSerializer):
     subthemes = SubThemeSerializer(many=True, read_only=True)  
     class Meta:
         model = Theme
-        fields = ['id', 'name', 'description', 'created', 'modified', 'questions_count', 'subthemes_count', 'subthemes']  
+        fields = ['id', 'name', 'description', 'created', 'modified', 'questions_count', 'subthemes_count', 'subthemes', 'slug']  
     
     def get_questions_count(self, obj):
         return obj.questions.count()
